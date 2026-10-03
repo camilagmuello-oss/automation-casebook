@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Automation casebook: real AI workflow builds with confidence gates, human review queues and audit logs.">
+<title>Cami's Automation Casebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --ground:#F4F6F4; --surface:#FFFFFF; --ink:#16201C; --muted:#56625C; --line:#D9E0DB;
+  --accent:#2F4BD8; --accent-soft:#E6EAFC;
+  --ok:#23764A; --ok-soft:#E1F1E7; --warn:#A8620C; --warn-soft:#FBEEDB; --off:#6B6F74; --off-soft:#ECEDEE; --plan:#6D3FB8; --plan-soft:#EFE7FA;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1311; --surface:#161D1A; --ink:#E5ECE8; --muted:#9AA7A0; --line:#2A3531;
+    --accent:#93A5FF; --accent-soft:#1E2542;
+    --ok:#6FD39B; --ok-soft:#15301F; --warn:#F0B35E; --warn-soft:#352612; --off:#A9AEB3; --off-soft:#24282B; --plan:#C3A2F5; --plan-soft:#2A1F3D;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1311; --surface:#161D1A; --ink:#E5ECE8; --muted:#9AA7A0; --line:#2A3531;
+  --accent:#93A5FF; --accent-soft:#1E2542;
+  --ok:#6FD39B; --ok-soft:#15301F; --warn:#F0B35E; --warn-soft:#352612; --off:#A9AEB3; --off-soft:#24282B; --plan:#C3A2F5; --plan-soft:#2A1F3D;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.62;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:40px 80px;display:grid;grid-template-columns:220px minmax(0,1fr);gap:56px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;font-size:14px}
+nav.toc .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+nav.toc a{display:block;color:var(--ink);text-decoration:none;padding:6px 10px;border-radius:6px}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--accent-soft);color:var(--accent);outline:none}
+main{min-width:0}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.12;margin:0}
+h1{font-size:clamp(34px,5vw,52px);font-weight:700;letter-spacing:-.02em;max-width:18ch}
+h2{font-size:clamp(26px,3.2vw,34px);font-weight:700;letter-spacing:-.01em}
+h3{font-size:19px;font-weight:600;margin-top:28px}
+p{margin:0;max-width:66ch}
+.stack>*+*{margin-top:14px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:19px;color:var(--muted);max-width:60ch}
+header.hero{display:grid;gap:18px;padding-bottom:36px;border-bottom:1px solid var(--line)}
+.caps{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.cap{font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.note{font-size:13px;color:var(--muted)}
+section.case{padding-block:56px;border-bottom:1px solid var(--line);display:grid;gap:22px}
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.spec div{background:var(--surface);padding:12px 14px}
+.spec dt{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.spec dd{margin:4px 0 0;font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.prod{color:var(--ok);background:var(--ok-soft)} .tool{color:var(--accent);background:var(--accent-soft)}
+.pend{color:var(--warn);background:var(--warn-soft)} .design{color:var(--plan);background:var(--plan-soft)} .nc{color:var(--off);background:var(--off-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;overflow-x:auto}
+.diagram pre.mermaid{margin:0;background:transparent;min-width:520px;font-family:var(--body)}
+.diagram figcaption{font-size:13px;color:var(--muted);margin-top:10px}
+.split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.split div{padding:16px;border-top:3px solid var(--line);background:var(--surface);border-radius:0 0 8px 8px}
+.split .ai{border-top-color:var(--accent)} .split .det{border-top-color:var(--ok)} .split .hum{border-top-color:var(--warn)}
+.split h4{margin:0 0 6px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.split ul{margin:0;padding-left:18px;font-size:14px}
+.split li+li{margin-top:4px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:10px 14px;vertical-align:top;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--ground)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;width:34%}
+.insight{font-family:var(--display);font-size:22px;line-height:1.3;font-weight:500;padding-left:18px;border-left:3px solid var(--accent);max-width:40ch}
+.lessons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:8px}
+.lesson{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.lesson b{display:block;font-family:var(--display);font-size:17px;font-weight:600;margin-bottom:6px;line-height:1.25}
+.lesson span{font-size:14px;color:var(--muted)}
+.lesson em{display:block;margin-top:8px;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.03em}
+.skills td:first-child{width:28%}
+footer{padding-top:40px;font-size:14px;color:var(--muted)}
+a{color:var(--accent)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:1fr;gap:24px;padding-block:24px 60px}
+  nav.toc{position:static}
+  nav.toc ol{display:flex;overflow-x:auto;gap:6px;padding-bottom:4px}
+  nav.toc a{white-space:nowrap;border:1px solid var(--line);background:var(--surface)}
+  .split,.lessons{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <div class="lbl">Casebook</div>
+  <ol>
+    <li><a href="#top">Overview</a></li>
+    <li><a href="#filing">Filing agent</a></li>
+    <li><a href="#rules">Rules vs. a model</a></li>
+    <li><a href="#undo">Undo layer</a></li>
+    <li><a href="#discovery">Discovery first</a></li>
+    <li><a href="#lessons">Lessons</a></li>
+    <li><a href="#skills">Skills & evidence</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero" id="top">
+  <div class="eyebrow">Camila Muello · AI Automation Builder</div>
+  <h1>I turn messy back-office work into automations that know their limits.</h1>
+  <p class="lede">Case studies from real production systems built with n8n and LLMs for property-management operations: where AI decides, where code decides, and where a person should.</p>
+  <div class="caps">
+    <span class="cap">Process mapping</span><span class="cap">AI classification & extraction</span><span class="cap">Validation layers</span><span class="cap">Human-in-the-loop</span><span class="cap">Audit trails</span><span class="cap">Production debugging</span>
+  </div>
+  <p class="note">Client details are anonymized. Systems are described at pattern level; no company data, names or identifiers appear here. Every case is labelled with how far it actually went:
+    <span class="chips" style="margin-top:8px"><span class="chip prod">In production</span><span class="chip tool">Built, run on demand</span><span class="chip pend">Awaiting a real case</span><span class="chip nc">Built, not connected</span><span class="chip design">Designed</span></span>
+  </p>
+</header>
+
+<!-- CASE 1 -->
+<section class="case" id="filing">
+  <div class="eyebrow">Case 01 · AI + deterministic</div>
+  <h2>The filing agent that knows when not to file</h2>
+  <dl class="spec">
+    <div><dt>Context</dt><dd>Property-management back office, shared inbox</dd></div>
+    <div><dt>Status</dt><dd><span class="chip prod">In production</span></dd></div>
+    <div><dt>My role</dt><dd>Co-built; led production hardening, scope alignment and the review layer</dd></div>
+    <div><dt>Stack</dt><dd>n8n · Claude API (Haiku) · Gmail · cloud document storage · Notion</dd></div>
+  </dl>
+
+  <div class="stack">
+    <h3>The problem</h3>
+    <p>A busy shared inbox receives a steady stream of attachments: invoices, estimates, inspection reports, association notices, owner and tenant documents. Each one had to be opened, identified, renamed according to an internal SOP and dropped into the right subfolder of the right property, by hand.</p>
+    <h3>Why a simple automation wasn't enough</h3>
+    <p>A mail rule can match a sender. It can't read a PDF and notice that the property address sits in the document header, not in the email. It can't tell a legal notice to a tenant from an inspection report that happens to be titled "Notice". And the property folders are named slightly differently from how vendors write addresses ("Dr South" vs. "Dr S"). The job needs reading, and reading needs AI. But filing into the wrong folder is worse than not filing at all, so AI couldn't be the last word.</p>
+  </div>
+
+  <figure class="diagram">
+<pre class="mermaid">
+flowchart TD
+  A[New email with attachments] --> B[Split: one item per file]
+  B --> C{Already in the log?}
+  C -- yes --> Z[Stop: never process twice]
+  C -- no --> D[AI reads email + PDF/image<br/>returns strict JSON]
+  D -- API error --> F[Fallback: confidence 0]
+  D --> E[Parse + deterministic overrides]
+  F --> G
+  E --> G{Noise?}
+  G -- yes --> L1[Log: discarded]
+  G -- no --> H{Confidence ≥ threshold?}
+  H -- no --> R[Human review queue]
+  H -- yes --> I{Type approved for automation?}
+  I -- no --> L2[Log: team handles it]
+  I -- yes --> J[Normalize address]
+  J --> K[Search real folder tree]
+  K --> V{Folder really matches?}
+  V -- no --> R
+  V -- yes --> S[Pick subfolder by type]
+  S --> N[Build SOP filename<br/>sanitize + de-duplicate]
+  N --> U{Upload OK?}
+  U -- no --> R
+  U -- yes --> P[Log + label email + mark read]
+  L2 --> R
+</pre>
+    <figcaption>Every exit writes a log row with a reason. There is no path where a document silently disappears.</figcaption>
+  </figure>
+
+  <div class="split">
+    <div class="ai"><h4>AI decides</h4><ul><li>What kind of document this is (~15 types)</li><li>Is it noise?</li><li>Extracts address, vendor, work order, dates</li><li>How confident it is about the <i>type</i> only</li></ul></div>
+    <div class="det"><h4>Code decides</h4><ul><li>Which folder it goes to (verified against the real tree)</li><li>The filename, per SOP</li><li>Whether this type is in scope</li><li>Overrides when signals are unambiguous</li></ul></div>
+    <div class="hum"><h4>People decide</h4><ul><li>Low-confidence documents</li><li>Addresses with no matching property</li><li>Which document types get automated at all</li><li>Anything the agent refuses to guess</li></ul></div>
+  </div>
+
+  <div class="stack">
+    <h3>What broke in production, and what changed</h3>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Failure</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>Two attachments in one email produced the same filename, so one overwrote the other</td><td>Unique identifier per document, a collision suffix, and a separate error log</td></tr>
+      <tr><td>The model kept lowering confidence on inspection reports over address doubts, despite instructions. In-scope reports stopped being filed</td><td>A deterministic rule: when sender and filename pattern are unambiguous, the type is not a matter of opinion. Confidence floor applied, address parsed from the filename</td></tr>
+      <tr><td>The confidence gate sent <i>every</i> document to review, even at 0.95</td><td>Traced from symptom to a condition node saved in an outdated format; rebuilt and republished</td></tr>
+      <tr><td>Two reports for the same property on different days got identical names</td><td>The date embedded in the source filename now overrides the AI's date guess</td></tr>
+      <tr><td>Storage rejected names containing “/” (“A/C”, “Increase/Decrease”)</td><td>Filename sanitizer before upload</td></tr>
+      <tr><td>Concurrent runs both tried to create the monthly email label</td><td>Create → on failure, re-list labels and resolve the one that now exists</td></tr>
+      <tr><td>The agent filed document types the team later said they handle manually</td><td>Scope gate before upload, written confirmation per document type, and a separate corrections agent (Case 03)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="stack">
+    <h3>Results</h3>
+    <p>Live on real mail since its first week. In a first-day audit of 35 documents, every classification reviewed was correct. In its first two weeks it logged hundreds of attachments, filed the approved types automatically, and sent the uncertain ones to a review queue with a plain-language reason.</p>
+    <p class="note">Still open, stated plainly: the “retain” path <span class="chip pend">Awaiting a real case</span> and the hand-off to the accounting system <span class="chip nc">Built, not connected</span>.</p>
+    <h3>Model choice</h3>
+    <p>A larger model was tested and was both less precise on this task and more expensive. The smaller, faster model stayed. Bigger isn't automatically better for narrow classification with a tight schema.</p>
+  </div>
+  <p class="insight">AI confidence measures how sure the model feels, not whether it's right. The architecture has to check.</p>
+</section>
+
+<!-- CASE 2 -->
+<section class="case" id="rules">
+  <div class="eyebrow">Case 02 · Deterministic by design</div>
+  <h2>When rules beat a model: the vendor report pipeline</h2>
+  <dl class="spec">
+    <div><dt>Context</dt><dd>Recurring vendor service reports for hundreds of properties</dd></div>
+    <div><dt>Status</dt><dd><span class="chip prod">In production</span></dd></div>
+    <div><dt>My role</dt><dd>Designed and built end to end</dd></div>
+    <div><dt>Stack</dt><dd>n8n · JavaScript · Gmail · storage REST API · PDF rendering API</dd></div>
+  </dl>
+  <div class="stack">
+    <h3>The problem</h3>
+    <p>Service vendors send visit reports by email, sometimes as an attachment, sometimes as the email body itself. Someone on the team printed body-only emails to PDF, renamed them and filed them under the property.</p>
+    <h3>The decision: no LLM</h3>
+    <p>The signals here are strong and stable: known senders, recurring subject words, predictable attachment names. So instead of a model, the pipeline scores signals (sender +2, attachment name +2, subject +1, body +1) and accepts at a conservative threshold. Cheaper, instant, fully explainable, and editable by anyone who can read a list of keywords.</p>
+  </div>
+  <figure class="diagram">
+<pre class="mermaid">
+flowchart LR
+  A[Vendor email] --> B[Score signals]
+  B --> C{Status}
+  C -- has attachment --> D[Use the file]
+  C -- report in body --> E[Render body to PDF]
+  C -- report detected, nothing usable --> R[Review log]
+  C -- not a report --> X[Ignore]
+  D --> F[Extract address]
+  E --> F
+  F --> G[Search folders under the right parent only]
+  G --> H{Match by street number?}
+  H -- no --> R
+  H -- yes --> I[Rename using the real folder name]
+  I --> J[Upload to report subfolder]
+  J --> K[Log + monthly label + mark read]
+</pre>
+    <figcaption>AI-free on purpose. The only "intelligence" is a scoring table the team can edit.</figcaption>
+  </figure>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Failure</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>Reports landed in a vendor folder instead of the property</td><td>Folder search restricted to descendants of the correct parent</td></tr>
+      <tr><td>The same email processed on every poll</td><td>Mark as read immediately after classification</td></tr>
+      <tr><td>Two reports arriving in the same hourly batch got each other's folder</td><td>Per-item resolution that always references that item's own source data</td></tr>
+      <tr><td>A fix worked in the editor but never ran in production</td><td>It was saved, not published. Publishing is now part of the change checklist</td></tr>
+      <tr><td>Paid PDF service: adopt or not?</td><td>Measured credit use per PDF on the free tier first, then decided</td></tr>
+    </tbody>
+  </table></div>
+  <p class="insight">The best AI decision is sometimes not using AI. Use the model where reading is hard, not where matching is easy.</p>
+</section>
+
+<!-- CASE 3 -->
+<section class="case" id="undo">
+  <div class="eyebrow">Case 03 · Human-in-the-loop</div>
+  <h2>An undo button for automation: approval-gated corrections and a review hub</h2>
+  <dl class="spec">
+    <div><dt>Context</dt><dd>Documents already filed in the wrong place</dd></div>
+    <div><dt>Status</dt><dd><span class="chip tool">Built, run on demand</span> <span class="chip prod">Review hub live</span></dd></div>
+    <div><dt>My role</dt><dd>Designed and built both</dd></div>
+    <div><dt>Stack</dt><dd>n8n · data tables · storage REST API · Notion</dd></div>
+  </dl>
+  <div class="stack">
+    <h3>The problem</h3>
+    <p>After a one-day bug and a scope change, some documents sat in the wrong subfolder. Fixing them by hand meant asking the client team for time, and giving the builder write access to their storage UI wasn't the right answer either.</p>
+    <h3>The approach</h3>
+    <p>A second workflow that proposes, waits, and only then acts. It reads what the filing agent logged, checks where each file <i>really</i> is today, and writes a proposal: move from here to there, already in place, or can't resolve and why. Nothing moves until a person marks the row approved. Errors come back as data, never as a crashed run.</p>
+  </div>
+  <figure class="diagram">
+<pre class="mermaid">
+flowchart TD
+  subgraph Propose
+    A[Read filed documents from log] --> B[Map type → expected subfolder]
+    B --> C[Fetch the real file + its current folder]
+    C --> D{State}
+    D --> D1[Proposed move]
+    D --> D2[Already in place]
+    D --> D3[Unresolved + reason]
+  end
+  D1 --> Q[(Corrections table + Notion log)]
+  D2 --> Q
+  D3 --> Q
+  Q --> H{{Person marks approved}}
+  subgraph Execute
+    H --> E{File + destination present?}
+    E -- no --> EE[Mark incomplete]
+    E -- yes --> M[Move / rename via API]
+    M --> V[Evaluate status code]
+    V --> W[Write result back to table + Notion]
+  end
+</pre>
+    <figcaption>Proposal and execution are separate runs. Approval is a column, not a meeting.</figcaption>
+  </figure>
+  <div class="stack">
+    <h3>The review hub</h3>
+    <p>The client team needed to see what the agents did without asking the developer. A small Notion space holds four plain-language pages (filing criteria, what the agent does, what to do if something looks wrong, who owns which access) and two live databases the agents write to: a review queue and a corrections log.</p>
+    <p>Internal log states are translated before they reach people. "Revisar: propiedad no encontrada" becomes “The address does not match any property folder.” A reviewer should read a decision, not a status code.</p>
+  </div>
+  <p class="insight">Human review isn't where automation failed. It's the part of the design that lets the rest run unattended.</p>
+</section>
+
+<!-- CASE 4 -->
+<section class="case" id="discovery">
+  <div class="eyebrow">Case 04 · Discovery & feasibility</div>
+  <h2>Reading the API before quoting: a utility-bill entry agent</h2>
+  <dl class="spec">
+    <div><dt>Context</dt><dd>Monthly utility statements entered into property-management software</dd></div>
+    <div><dt>Status</dt><dd><span class="chip design">Designed</span></dd></div>
+    <div><dt>My role</dt><dd>Process mapping, scope, technical feasibility</dd></div>
+    <div><dt>Stack (planned)</dt><dd>n8n · LLM extraction · spreadsheet lookup · PM software</dd></div>
+  </dl>
+  <div class="stack">
+    <h3>The process, mapped in 8 steps</h3>
+    <p>Detect the statement email → extract account, dates and each charge type → look up how that property recharges tenants in a billing tracker → enter one charge through a utility-bill module with the right ledger accounts → create the other bill by copying last month's and updating totals, dates and lines → replace the PDF → update the tracker and label the email → send anything ambiguous to review.</p>
+    <h3>The finding that changed the plan</h3>
+    <p>The software's reporting API is <b>read-only</b>. It can list properties and ledger accounts, but it can't create a bill or attach a document. Writing requires a different channel (an email-in bill feature, admin-level credentials) and possibly a native automation feature the account already had.</p>
+    <h3>The decision</h3>
+    <p>No proposal or estimate goes out until what can and can't be automated is settled. When it does, it offers two paths: faster with more risk, or slower with less margin for error.</p>
+  </div>
+  <p class="insight">"Can it connect?" is the wrong question. Ask "can it write?" before promising automation.</p>
+</section>
+
+<!-- LESSONS -->
+<section class="case" id="lessons">
+  <div class="eyebrow">What building these taught me</div>
+  <h2>Lessons with receipts</h2>
+  <p>Each one comes from a specific incident above, not from a best-practices list.</p>
+  <div class="lessons">
+    <div class="lesson"><b>Confidence isn't correctness.</b><span>The model under-rated documents it had classified right, and a broken gate over-rated nothing at all. Both needed checks outside the model.</span><em>Case 01</em></div>
+    <div class="lesson"><b>Not every decision belongs to AI.</b><span>The model picks the document type. Code picks the folder, and verifies it exists.</span><em>Cases 01, 02</em></div>
+    <div class="lesson"><b>Validate every lookup before you write.</b><span>A search result that "looks close" is how files end up under the wrong property.</span><em>Case 01</em></div>
+    <div class="lesson"><b>Design the unhappy paths first.</b><span>Ten-plus exits, each with a reason. Documents never vanish silently.</span><em>Case 01</em></div>
+    <div class="lesson"><b>Edge cases show up with real volume.</b><span>Duplicate names, same-hour batches, slashes in names, races on label creation: none appeared in testing.</span><em>Cases 01, 02</em></div>
+    <div class="lesson"><b>Build the undo path.</b><span>An approval-gated corrector turned a cleanup job into a reviewable list.</span><em>Case 03</em></div>
+    <div class="lesson"><b>Scope is per document type, in writing.</b><span>"Automate filing" meant different things to builder and team until each type was confirmed.</span><em>Cases 01, 03</em></div>
+    <div class="lesson"><b>The real structure beats the SOP.</b><span>When the written procedure and the actual folder tree disagreed, the tree won.</span><em>Case 01</em></div>
+    <div class="lesson"><b>Audit trails are for operators.</b><span>Logs only matter if the team can read them without the developer.</span><em>Case 03</em></div>
+    <div class="lesson"><b>Data stays inside the client's walls.</b><span>Notifications, alerts and copies run in the client's environment and accounts, from day one.</span><em>All cases</em></div>
+    <div class="lesson"><b>Measure before you buy.</b><span>Usage of a paid service was measured on a free tier before adding cost; AI cost is re-estimated whenever scope grows.</span><em>Cases 01, 02</em></div>
+    <div class="lesson"><b>Check the write path before quoting.</b><span>A read-only API reshaped an entire project before a single node was built.</span><em>Case 04</em></div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section class="case" id="skills">
+  <div class="eyebrow">Skills & evidence</div>
+  <h2>What these projects demonstrate</h2>
+  <div class="tablewrap"><table class="skills">
+    <thead><tr><th>Area</th><th>Demonstrated through</th></tr></thead>
+    <tbody>
+      <tr><td>Workflow architecture</td><td>n8n workflows of 24 to 57 nodes with one branch per outcome; idempotent re-runs; per-item processing under concurrency</td></tr>
+      <tr><td>AI classification & extraction</td><td>Multimodal PDF/image reading, a strict JSON schema, disambiguation rules in the prompt, a defensive parser, fallback on API failure</td></tr>
+      <tr><td>Validation & reliability</td><td>Confidence gates, deterministic overrides, folder-match verification, filename sanitizing, duplicate detection, race-condition handling</td></tr>
+      <tr><td>Human-in-the-loop</td><td>Review queue with plain-language reasons; approval-gated execution</td></tr>
+      <tr><td>Integrations</td><td>LLM API, email, document storage REST API, PDF rendering API, Notion, data tables</td></tr>
+      <tr><td>Debugging</td><td>Production audits, symptom-to-root-cause tracing, execution inspection, read-only audit workflows</td></tr>
+      <tr><td>Business process</td><td>SOP analysis and authoring, process mapping, scope confirmation, feasibility checks on API limits</td></tr>
+      <tr><td>Documentation</td><td>Pilot proposal, SOPs, operator-facing hub, these case studies</td></tr>
+      <tr><td>Not yet evidenced</td><td>Webhooks, configured retry policies, automated regression test suites</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>
+  <p>Camila Muello · AI Automation Builder · n8n, LLMs and operations that hold up in production.</p>
+</footer>
+</main>
+</div>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+</script>
+</body>
+</html>
